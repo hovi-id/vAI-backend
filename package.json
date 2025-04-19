@@ -1,9 +1,11 @@
 {
   "name": "vai-backend",
   "version": "1.0.0",
-  "main": "dist/server.js",
+  "main": "server.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "tsup src/server.ts --format esm,cjs --dts",
+    "build-tsc": "npx tsc",
+    "build-clean": "rm -rf dist; tsup",
     "start": "node dist/server.js",
     "dev": "ts-node src/server.ts"
   },
@@ -18,6 +20,7 @@
     "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^22.14.1",
     "ts-node": "^10.9.2",
+    "tsup": "^8.4.0",
     "typescript": "^5.8.3"
   },
   "dependencies": {
@@ -27,6 +30,7 @@
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "helmet": "^8.1.0",
+    "tsx": "~4.11.0",
     "jsonwebtoken": "^9.0.2"
   }
 }

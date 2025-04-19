@@ -21,7 +21,7 @@ export const authenticateToken = (
 
   return jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) {
-      console.error('Token verification error:', err);
+      console.log('Token verification error:', err);
       return false;
     }
     req.user = user;

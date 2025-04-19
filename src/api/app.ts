@@ -1,0 +1,129 @@
+import axios from "axios";
+import { Router } from "express";
+
+const router = Router();
+
+// Function to issue an AnonCred credential
+async function issueAnonCredCredential(payload: any, connectionId: string): Promise<any> {
+  try {
+    const apiUrl = process.env.API_ENDPOINT + "/credential/anoncred/offer";
+    const apiKey = process.env.HOVI_API_KEY;
+    const tenantId = process.env.TENANT_ID;
+    const credentialTemplateId = process.env.CREDENTIAL_TEMPLATE_ID;
+
+    const data = {
+        "connectionId": connectionId,
+        "credentialTemplateId": credentialTemplateId,
+        "credentialValues": payload,
+        "comment": "vAI Demo Credential",
+      };
+
+    const headers = {
+      "x-tenant-id": tenantId,
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    };
+
+    const response = await axios.post(apiUrl, data, { headers });
+
+    return response.data;
+  } catch (error: any) {
+    console.error(
+      "Error issuing AnonCred credential:",
+      error.response?.data || error.message
+    );
+    throw new Error("Failed to issue AnonCred credential");
+  }
+}
+
+// Function to create a connection
+async function createConnection(): Promise<any> {
+  try {
+    const apiUrl = process.env.API_ENDPOINT + "/connection/create";
+    const apiKey = process.env.HOVI_API_KEY;
+    const tenantId = process.env.TENANT_ID;
+    const data = {
+      label: "Acme Financial Group",
+      alias: "fg", //ADD AGENT INVITE URL
+      autoAcceptConnection: true,
+      multiUseInvitation: false,
+      domain: "acme-financial-group.com",
+      imageUrl:
+        "https://hovi-assets.s3.eu-central-1.amazonaws.com/studio-assets/tenants/images/acme-financial-group-image-1744552187457.jpeg",
+    };
+    const headers = {
+      "x-tenant-id": tenantId,
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    };
+    const response = await axios.post(apiUrl, data, { headers });
+
+    return response.data;
+  } catch (error: any) {
+    console.error(
+      "Error creating connection:",
+      error.response?.data || error.message
+    );
+    throw new Error("Failed to create connection");
+  }
+}
+
+// Function to get connection details
+async function getConnectionDetails(invitationId: string): Promise<any> {
+  try {
+    const apiUrl =
+      process.env.API_ENDPOINT +
+      "/connection/find?invitationId=" +
+      invitationId;
+    const apiKey = process.env.HOVI_API_KEY;
+    const tenantId = process.env.TENANT_ID;
+    const headers = {
+      "x-tenant-id": tenantId,
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    };
+    const response = await axios.get(apiUrl, { headers });
+    return response.data;
+  } catch (error: any) {
+    console.error(
+      "Error getting connection details:",
+      error.response?.data || error.message
+    );
+    throw new Error("Failed to get connection details");
+  }
+}
+
+// API endpoint to create a connection
+router.post("/create-connection", async (req, res) => {
+  try {
+    const connectionData = await createConnection();
+    res.status(200).json(connectionData);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// API endpoint to get connection details
+router.get("/connection/:invitationId", async (req, res) => {
+  const invitationId = req.params.invitationId;
+  try {
+    const connectionDetails = await getConnectionDetails(invitationId);
+    res.status(200).json(connectionDetails);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// API endpoint to issue an AnonCred credential
+router.post("/issue-credential", async (req, res) => {
+  const credentialData = req.body.credentialValues;
+  const connectionId = req.body.connectionId;
+  try {
+    const credential = await issueAnonCredCredential(credentialData, connectionId);
+    res.status(200).json(credential);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+export default router;

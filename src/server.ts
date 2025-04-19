@@ -14,15 +14,15 @@ app.use(cors());
 app.use(express.json())
 
 
-app.use((req, res, next) => {
-  if (authenticateToken(req, res, next)) {
-      // If the token is valid, proceed to the next middleware      
-      next();
-  } else {  
-      // If the token is invalid, send a 403 Forbidden response      
-      res.status(403).json({ message: 'Invalid token' });
-  }
-});
+// app.use((req, res, next) => {
+//   if (authenticateToken(req, res, next)) {
+//       // If the token is valid, proceed to the next middleware      
+//       next();
+//   } else {  
+//       // If the token is invalid, send a 403 Forbidden response      
+//       res.status(403).json({ message: 'Invalid token' });
+//   }
+// });
 
 
 /*

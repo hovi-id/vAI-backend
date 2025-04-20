@@ -147,6 +147,122 @@ async function makePhoneCall(phone_number: string): Promise<any> {
   }
 }
 
+// Function to send to the proof request
+
+
+const respondAiAgentProofRequest = async () => {
+    const apiUrl =  process.env.API_ENDPOINT +'/verification/proof-request';
+    const interval = 2000;
+    const timeout = 5 * 60 * 1000;
+    const startTime = Date.now();
+
+    const apiKey = process.env.HOVI_API_KEY;
+    const agentTenantId = process.env.AGENT_TENANT_ID;
+    const headers = {
+        "x-tenant-id": agentTenantId,
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      };
+
+    if (!apiKey || !agentTenantId || !headers) {
+      throw new Error("Missing API key or agent tenant ID in environment variables");
+    }
+  
+    const check = async () => {
+      try {        
+        const response = await axios.get(apiUrl, { headers });        
+        const data = await response.data;
+        if (Array.isArray(data.response) && data.response.length > 0) {
+          console.log(`🎉 Response for tenant ${agentTenantId}:`, data.response);
+          // TODO: Find from which connection the proof request was sent from and if the phone number session is active for it
+          // const connectionId = data.response[0].connectionId;          
+          // const connectionDetails = await getConnectionDetails(connectionId);          
+          // const phone_number = connectionDetails.theirLabel;
+          // const callStatus = RedisCache.getValue(`phone_call_${phone_number}`);
+
+          const URL2 = process.env.API_ENDPOINT + '/verification/submit-presentation';
+          const payload = { proofRecordId: "PROOF-RECORD-FOUND in data.response" }
+          const response2 = await axios.post(URL2, payload, { headers });;      
+          const data2 = await response2.data  
+          console.log(`🎉 DATA of proof submission:`, data2);
+
+          return true; // Stop polling if the proof request is found
+        }
+          
+        console.log(`⏳ Waiting for tenant ${agentTenantId}...`);
+        return false;
+  
+      } catch (err) {
+        console.error(`❌ Error for tenant ${agentTenantId}:`, err);
+        return true;     // Stop polling on error
+      }
+    };
+  
+    const poll = async () => {
+      while (Date.now() - startTime < timeout) {
+        const found = await check();
+        if (found) break;
+        await new Promise(res => setTimeout(res, interval));
+      }
+  
+      console.log(`✅ Polling done for tenant ${agentTenantId}`);
+    };
+  
+    poll();
+  };
+
+
+  const sendAndCheckProofDuringCall = async (connection_id: string) => {
+    const verificationTemplateId = process.env.VERIFICATION_TEMPLATE_ID;
+    const connectionId = connection_id;
+
+    const token = process.env.HOVI_API_KEY;
+    const tenantId = process.env.TENANT_ID;
+    const headers = {
+        "x-tenant-id": tenantId,
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      };
+
+    try {
+      // Step 1: Send proof request
+      const sendRes = await axios.post( process.env.API_ENDPOINT +'/verification/send-proof-request', {
+        verificationTemplateId,
+        connectionId,
+        comment: 'verifying identification during call',
+      }, { headers });
+  
+      const proofExchangeId = sendRes.data.response.proofExchangeId;
+      console.log('✅ Sent proof request:', proofExchangeId);
+  
+      // Step 2: Poll every 2s for up to 2 minutes
+      const start = Date.now();
+      const timeout = 2 * 60 * 1000;
+  
+      while (Date.now() - start < timeout) {
+        const pollRes = await axios.get(
+          `${process.env.API_ENDPOINT}/verification/proof-request/find?proofExchangeId=${proofExchangeId}`,
+          { headers }
+        );
+  
+        const proof = pollRes.data.response;
+        if (Array.isArray(proof) && proof.length > 0) {
+          console.log('🎉 Proof response received:', proof);
+          return proof;
+        }
+  
+        await new Promise(res => setTimeout(res, 2000));
+      }
+  
+      console.warn('⌛ Timed out waiting for proof');
+      return null;
+  
+    } catch (err) {
+      console.error('❌ Error:', err);
+      return null;
+    }
+  };
+
 // API endpoint to create a connection
 router.post("/create-connection", async (req, res) => {
   try {
@@ -193,5 +309,16 @@ router.post("/make-phone-call", async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+//API endpoint to respond to the proof request
+// router.post("/respond-proof-request", async (req, res) => {    
+//     try {
+//         const response = await respondAiAgentProofRequest();
+//         res.status(200).json(response);
+//     } catch (error: any) {
+//         res.status(500).json({ error: error.message });
+//     }
+// });
+
 
 export default router;

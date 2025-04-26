@@ -131,7 +131,7 @@ async function makePhoneCall(phone_number: string, connection_id: string): Promi
 
         RedisCache.setValue(
           `phone_call_${phone_number}`,
-          { status: "pending",
+          { status: "active",
             connection_id: connection_id
            },
           60 * 5
@@ -285,6 +285,16 @@ const sendAndCheckProofDuringCall = async (phone_number: string) => {
         const proof = pollRes.data.response;
         if (proof && proof.isVerified && proof.state === "done") {
           let credData = extractProofValues(proof);
+
+          RedisCache.setValue(
+            `phone_call_${phone_number}`,
+            { status: "proof_verified",
+              connection_id: connectionId,
+              cred_data: credData
+             },
+            60 * 5
+          ); // Store the phone call status in Redis for 5 mins
+          
           console.log('🎉 Proof response received:', credData);
           return proof;
         }

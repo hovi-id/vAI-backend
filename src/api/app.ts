@@ -260,7 +260,7 @@ const respondAiAgentProofRequest = async () => {
         );
         console.log("Poll response:", pollRes.data);
         const proof = pollRes.data.response;
-        if (Array.isArray(proof) && proof.length > 0) {
+        if (proof && proof.state !== "pending") { // TODO: change to verified          
           console.log('🎉 Proof response received:', proof);
           return proof;
         }

@@ -250,13 +250,15 @@ const respondAiAgentProofRequest = async () => {
       //Step 2: Poll every 2s for up to 2 minutes
       const start = Date.now();
       const timeout = 2 * 60 * 1000;
-  
+      var i = 0;
       while (Date.now() - start < timeout) {
+        console.log("\n⏳ Polling for proof response..."+ i + " with id: " + proofExchangeId);
+        i++;
         const pollRes = await axios.get(
           `${process.env.API_ENDPOINT}/verification/proof-request/find?proofExchangeId=${proofExchangeId}`,
           { headers }
         );
-  
+        console.log("Poll response:", pollRes.data);
         const proof = pollRes.data.response;
         if (Array.isArray(proof) && proof.length > 0) {
           console.log('🎉 Proof response received:', proof);

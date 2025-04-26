@@ -115,7 +115,7 @@ async function makePhoneCall(phone_number: string, connection_id: string): Promi
       body: JSON.stringify({
         phone_number: phone_number,
         pathway_id: process.env.BLAND_AI_PATHWAY,
-        voice: "pryce",
+        voice: "Josh",
         background_track: "office",
         max_duration: 2,
         from: "+14159808590"
@@ -294,7 +294,7 @@ const sendAndCheckProofDuringCall = async (phone_number: string) => {
              },
             60 * 5
           ); // Store the phone call status in Redis for 5 mins
-          
+
           console.log('🎉 Proof response received:', credData);
           return proof;
         }

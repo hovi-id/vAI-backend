@@ -214,7 +214,30 @@ const respondAiAgentProofRequest = async () => {
   };
 
 
-  const sendAndCheckProofDuringCall = async (phone_number: string) => {
+const extractProofValues = (jsonData: any) => {
+  const extracted: Record<string, string> = {};
+
+  try {
+    const revealedGroups = jsonData.presentationExchange.presentation.anoncreds.proof.requested_proof.revealed_attr_groups;
+
+    if (revealedGroups?.length > 0) {
+      const values = revealedGroups[0].values;
+
+      for (const key in values) {
+        if (values[key]?.raw) {
+          extracted[key] = values[key].raw;
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error extracting proof values:', error);
+  }
+
+  return extracted;
+};
+  
+
+const sendAndCheckProofDuringCall = async (phone_number: string) => {
     const verificationTemplateId = process.env.VERIFICATION_TEMPLATE_ID;
     const call_data = await RedisCache.getValue(
       `phone_call_${phone_number}`);
@@ -258,10 +281,11 @@ const respondAiAgentProofRequest = async () => {
           `${process.env.API_ENDPOINT}/verification/proof-request/find?proofExchangeId=${proofExchangeId}`,
           { headers }
         );
-        console.log("Poll response:", pollRes.data);
+        // console.log("Poll response:", pollRes.data);
         const proof = pollRes.data.response;
-        if (proof && proof.state !== "pending") { // TODO: change to verified          
-          console.log('🎉 Proof response received:', proof);
+        if (proof && proof.isVerified && proof.state === "done") {
+          let credData = extractProofValues(proof);
+          console.log('🎉 Proof response received:', credData);
           return proof;
         }
   

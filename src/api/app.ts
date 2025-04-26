@@ -370,7 +370,8 @@ router.post("/make-phone-call", async (req, res) => {
 
 //API endpoint to send and check proof during call
 router.post("/send-proofreq-during-call", async (req, res) => {
-    const phoneNumber = req.body.phone_number;
+  console.log("body", req.body);
+    const phoneNumber = req.body.to;
     try {
         const response = await sendAndCheckProofDuringCall(phoneNumber);
         res.status(200).json(response);

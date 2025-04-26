@@ -247,29 +247,27 @@ const respondAiAgentProofRequest = async () => {
       const proofExchangeId = sendRes.data.response.proofExchangeId;
       console.log('✅ Sent proof request:', proofExchangeId);
   
-      // Step 2: Poll every 2s for up to 2 minutes
-      // const start = Date.now();
-      // const timeout = 2 * 60 * 1000;
+      //Step 2: Poll every 2s for up to 2 minutes
+      const start = Date.now();
+      const timeout = 2 * 60 * 1000;
   
-      // while (Date.now() - start < timeout) {
-      //   const pollRes = await axios.get(
-      //     `${process.env.API_ENDPOINT}/verification/proof-request/find?proofExchangeId=${proofExchangeId}`,
-      //     { headers }
-      //   );
+      while (Date.now() - start < timeout) {
+        const pollRes = await axios.get(
+          `${process.env.API_ENDPOINT}/verification/proof-request/find?proofExchangeId=${proofExchangeId}`,
+          { headers }
+        );
   
-      //   const proof = pollRes.data.response;
-      //   if (Array.isArray(proof) && proof.length > 0) {
-      //     console.log('🎉 Proof response received:', proof);
-      //     return proof;
-      //   }
+        const proof = pollRes.data.response;
+        if (Array.isArray(proof) && proof.length > 0) {
+          console.log('🎉 Proof response received:', proof);
+          return proof;
+        }
   
-      //   await new Promise(res => setTimeout(res, 2000));
-      // }
+        await new Promise(res => setTimeout(res, 2000));
+      }
   
-      // console.warn('⌛ Timed out waiting for proof');
-      // return null;
-      return sendRes.data.response;
-  
+      console.warn('⌛ Timed out waiting for proof');
+      return null;        
     } catch (err) {
       console.error('❌ Error:', err);
       return null;

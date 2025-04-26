@@ -218,10 +218,10 @@ const extractProofValues = (jsonData: any) => {
   const extracted: Record<string, string> = {};
 
   try {
-    const revealedGroups = jsonData.presentationExchange.presentation.anoncreds.proof.requested_proof.revealed_attr_groups;
+    const revealedGroups = jsonData.presentationExchange.presentation.anoncreds.requested_proof.revealed_attr_groups;
 
-    if (revealedGroups?.length > 0) {
-      const values = revealedGroups[0].values;
+    if (revealedGroups?.attributes?.values) {
+      const values = revealedGroups.attributes.values;
 
       for (const key in values) {
         if (values[key]?.raw) {

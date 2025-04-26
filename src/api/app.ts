@@ -98,7 +98,7 @@ async function getConnectionDetails(invitationId: string): Promise<any> {
 }
 
 // Use BlandAI API to make a phone call
-async function makePhoneCall(phone_number: string): Promise<any> {
+async function makePhoneCall(phone_number: string, connection_id: string): Promise<any> {
   try {
     if (!process.env.BLAND_AI_API_KEY || !process.env.BLAND_AI_PATHWAY) {
       throw new Error(
@@ -131,7 +131,9 @@ async function makePhoneCall(phone_number: string): Promise<any> {
 
         RedisCache.setValue(
           `phone_call_${phone_number}`,
-          { status: "pending" },
+          { status: "pending",
+            connection_id: connection_id
+           },
           60 * 5
         ); // Store the phone call status in Redis for 5 mins
 
@@ -212,9 +214,19 @@ const respondAiAgentProofRequest = async () => {
   };
 
 
-  const sendAndCheckProofDuringCall = async (connection_id: string) => {
+  const sendAndCheckProofDuringCall = async (phone_number: string) => {
     const verificationTemplateId = process.env.VERIFICATION_TEMPLATE_ID;
-    const connectionId = connection_id;
+    const call_data = await RedisCache.getValue(
+      `phone_call_${phone_number}`);
+
+    if (!call_data) {
+      console.error("No call data found in Redis");
+      return null;
+    }     
+   
+    //TODO: CHECK IF PHONE CALL IS ACTIVE
+    console.log("Call data:", call_data);
+    const connectionId = call_data.connection_id;
 
     const token = process.env.HOVI_API_KEY;
     const tenantId = process.env.TENANT_ID;
@@ -302,8 +314,9 @@ router.post("/issue-credential", async (req, res) => {
 // API endpoint to make a phone call
 router.post("/make-phone-call", async (req, res) => {
     const phoneNumber = req.body.phone_number;
+    const connectionId = req.body.connection_id;
     try {
-        const response = await makePhoneCall(phoneNumber);
+        const response = await makePhoneCall(phoneNumber, connectionId);
         res.status(200).json(response);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
@@ -319,6 +332,18 @@ router.post("/make-phone-call", async (req, res) => {
 //         res.status(500).json({ error: error.message });
 //     }
 // });
+
+//API endpoint to send and check proof during call
+router.post("/send-proofreq-during-call", async (req, res) => {
+    const phoneNumber = req.body.phone_number;
+    try {
+        const response = await sendAndCheckProofDuringCall(phoneNumber);
+        res.status(200).json(response);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+}
+);
 
 
 export default router;

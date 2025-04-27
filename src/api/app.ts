@@ -388,5 +388,20 @@ router.post("/send-proofreq-during-call", async (req, res) => {
 }
 );
 
+//API route to get credential information from Redis
+router.get("/get-credential-info/:phone_number", async (req, res) => {
+    const phoneNumber = req.params.phone_number;
+    try {
+        const credentialInfo = await RedisCache.getValue(`phone_call_${phoneNumber}`);
+        if (credentialInfo && credentialInfo.cred_data) {
+            res.status(200).json(credentialInfo.cred_data);
+        } else {
+            res.status(404).json({ message: "No credential information found" });
+        }
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 
 export default router;

@@ -281,7 +281,7 @@ const sendAndCheckProofDuringCall = async (phone_number: string) => {
           `${process.env.API_ENDPOINT}/verification/proof-request/find?proofExchangeId=${proofExchangeId}`,
           { headers }
         );
-        // console.log("Poll response:", pollRes.data);
+        console.log("Poll response:", pollRes.data);
         const proof = pollRes.data.response;
         if (proof && proof.isVerified && proof.state === "done") {
           let credData = extractProofValues(proof);
@@ -298,6 +298,13 @@ const sendAndCheckProofDuringCall = async (phone_number: string) => {
           console.log('🎉 Proof response received:', credData);
           return proof;
         }
+
+        if (proof && proof.state === "abandonded") {
+          console.log('❌ Proof request abandoned');
+          return null;
+        }
+
+
   
         await new Promise(res => setTimeout(res, 2000));
       }

@@ -2,7 +2,8 @@ require('dotenv').config();
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import router from './routes/index';
+// import router from './routes/index';
+// import { initAPI } from './routes/index';
 import { authenticateToken } from './middlewares/auth';
 
 
@@ -12,7 +13,7 @@ const PORT = process.env.PORT || 9000;
 app.use(helmet());
 app.use(cors());
 app.use(express.json())
-
+app.use(express.urlencoded({ extended: true }));
 
 // app.use((req, res, next) => {
 //   if (authenticateToken(req, res, next)) {
@@ -28,17 +29,20 @@ app.use(express.json())
 /*
  * This function is used to check the status of the server
  */
-app.get('/status', function (req: Request, res: Response) {
-    /*
-      * #swagger.tags = ['Status']
-      * #swagger.summary = 'Service Status'
-      * #swagger.description = 'This route is used to check the status of the server.'
-      * #swagger.responses[200] = { description: 'Success', schema: { status: true } }
-   */
-    res.json({ status: true });
-});
+// app.get('/status', function (req: Request, res: Response) {
+//     /*
+//       * #swagger.tags = ['Status']
+//       * #swagger.summary = 'Service Status'
+//       * #swagger.description = 'This route is used to check the status of the server.'
+//       * #swagger.responses[200] = { description: 'Success', schema: { status: true } }
+//    */
+//     res.json({ status: true });
+// });
 
-app.use(router);
+// app.use(router);
+
+app.use('/api', require('./api/app').default);
+app.use('/wallet', require('./api/wallet').default);
 
 app.listen(PORT, async function () {
   console.log('Server listening on port ' + PORT);  

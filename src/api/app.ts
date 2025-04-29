@@ -404,4 +404,15 @@ router.get("/get-credential-info/:phone_number", async (req, res) => {
 });
 
 
+router.get("/status", async (req, res) => {
+  try {
+    console.log("Status route here!");
+    res.status(200).json({ status: true });
+  } catch (error) {
+    console.error("Error getting status:", error);
+    res.status(500).json({ error: "Failed to get status" });
+  }
+});
+
+
 export default router;

@@ -78,8 +78,14 @@ async function sendProofRequest(token: string, connectionId: string) {
         presentationRequestLabel: "AI Agent Verification",
         presentationRequestVersion: "1.0.0",
         requestedAttributes: {
-          "0_name": {
-            name: "name",
+          "0_Attribute": {
+            name: "CallerId",
+          },
+          "1_Attribute": {
+            name: "Owner",
+          },
+          "2_Attribute": {
+            name: "Name",
           },
         },
       }),
@@ -111,9 +117,9 @@ async function getProofRequestStatus(
 
 //API to create a new wallet
 router.post("/create", async (req, res) => {
-  const { label, secret } = req.body;
+  const { phone_number, secret } = req.body;
   try {
-    const wallet = await createWallet(label, secret);
+    const wallet = await createWallet(phone_number, secret);
     res.status(200).json(wallet);
   } catch (error) {
     console.error("Error creating wallet:", error);
@@ -189,6 +195,15 @@ router.get("/proof/status", async (req, res) => {
     res.status(500).json({ error: "Failed to get proof request status" });
   }
 });
+
+router.get("/connectionInvite", async (req, res) => {
+    try {    
+      res.status(200).json({ inviteUrl: "https://studio-dev.hovi.id/connection?oob=eyJAdHlwZSI6Imh0dHBzOi8vZGlkY29tbS5vcmcvb3V0LW9mLWJhbmQvMS4xL2ludml0YXRpb24iLCJAaWQiOiJjYTBjOTE0Ni1lNjc5LTQzOWYtYjAwNS1iOGVhMzI5MjhhY2EiLCJsYWJlbCI6IisxNDE1OTgwODU5MCIsImFjY2VwdCI6WyJkaWRjb21tL2FpcDEiLCJkaWRjb21tL2FpcDI7ZW52PXJmYzE5Il0sImhhbmRzaGFrZV9wcm90b2NvbHMiOlsiaHR0cHM6Ly9kaWRjb21tLm9yZy9kaWRleGNoYW5nZS8xLjEiLCJodHRwczovL2RpZGNvbW0ub3JnL2Nvbm5lY3Rpb25zLzEuMCJdLCJzZXJ2aWNlcyI6W3siaWQiOiIjaW5saW5lLTAiLCJzZXJ2aWNlRW5kcG9pbnQiOiJodHRwczovL2tub3duLW1lbGl0YS1ob3ZpLTQ0NzI2MDc1LmtveWViLmFwcC9hZ2VudCIsInR5cGUiOiJkaWQtY29tbXVuaWNhdGlvbiIsInJlY2lwaWVudEtleXMiOlsiZGlkOmtleTp6Nk1rcWRLR3FFZlB4NEZNRmRTR21mMjZmclhUWVliMU05UmtYbnpoeDRXdjVIWUIiXSwicm91dGluZ0tleXMiOltdfV0sImltYWdlVXJsIjoiaHR0cHM6Ly9ob3ZpLWFzc2V0cy5zMy5ldS1jZW50cmFsLTEuYW1hem9uYXdzLmNvbS9zdHVkaW8tYXNzZXRzL3RlbmFudHMvaW1hZ2VzL2FjbWUtY2FsbGVyLWFnZW50LWltYWdlLTE3NDQ1NTU2OTk4MzUucG5nIn0" });
+    } catch (error) {
+      console.error("Error getting status:", error);
+      res.status(500).json({ error: "Failed to get status" });
+    }
+  });
 
 //API to get status of api
 router.get("/status", async (req, res) => {

@@ -78,13 +78,13 @@ async function sendProofRequest(token: string, connectionId: string) {
         presentationRequestLabel: "AI Agent Verification",
         presentationRequestVersion: "1.0.0",
         requestedAttributes: {
-          "CallerId": {
+          "0_CallerId": {
             name: "CallerId",
           },
-          "Owner": {
+          "1_Owner": {
             name: "Owner",
           },
-          "Name": {
+          "2_Name": {
             name: "Name",
           },
         },

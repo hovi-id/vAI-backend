@@ -78,13 +78,13 @@ async function sendProofRequest(token: string, connectionId: string) {
         presentationRequestLabel: "AI Agent Verification",
         presentationRequestVersion: "1.0.0",
         requestedAttributes: {
-          "0_CallerId": {
+          "0_Attribute": {
             name: "CallerId",
           },
-          "1_Owner": {
+          "1_Attribute": {
             name: "Owner",
           },
-          "2_Name": {
+          "2_Attribute": {
             name: "Name",
           },
         },
@@ -176,26 +176,26 @@ router.post("/proof/send-request", async (req, res) => {
   }
 });
 
-const extractProofValues = (jsonData: any) => {  
-    const parsed: Record<string, string> = {}; 
+const extractProofValues = (jsonData: any) => {
+    const extracted: Record<string, string> = {};
+  
     try {
       const revealedGroups = jsonData.presentation.anoncreds.requested_proof.revealed_attrs;      
   
-      
-
-      for (const key in revealedGroups) {
-        if (revealedGroups.hasOwnProperty(key)) {
-          parsed[key] = revealedGroups[key].raw;
+      if (revealedGroups?.attributes?.values) {
+        const values = revealedGroups.attributes.values;
+  
+        for (const key in values) {
+          if (values[key]?.raw) {
+            extracted[key] = values[key].raw;
+          }
         }
       }
-    
-      return parsed;
     } catch (error) {
-    //   console.error('Error extracting proof values:', error);
-        // Handle the error as needed
-        return parsed;
+      console.error('Error extracting proof values:', error);
     }
   
+    return extracted;
   };
 
 //API to get proof request status
@@ -213,8 +213,8 @@ router.get("/proof/status", async (req, res) => {
     );
 
     const resp = extractProofValues(proofStatus.response);
-    
-    res.status(200).json(resp);
+    console.log("Extracted proof values:", resp);
+    res.status(200).json(proofStatus);
   } catch (error) {
     console.error("Error getting proof request status:", error);
     res.status(500).json({ error: "Failed to get proof request status" });

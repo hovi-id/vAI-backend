@@ -78,13 +78,13 @@ async function sendProofRequest(token: string, connectionId: string) {
         presentationRequestLabel: "AI Agent Verification",
         presentationRequestVersion: "1.0.0",
         requestedAttributes: {
-          "0_Attribute": {
+          "CallerId": {
             name: "CallerId",
           },
-          "1_Attribute": {
+          "Owner": {
             name: "Owner",
           },
-          "2_Attribute": {
+          "Name": {
             name: "Name",
           },
         },
@@ -176,6 +176,28 @@ router.post("/proof/send-request", async (req, res) => {
   }
 });
 
+const extractProofValues = (jsonData: any) => {  
+    const parsed: Record<string, string> = {}; 
+    try {
+      const revealedGroups = jsonData.presentation.anoncreds.requested_proof.revealed_attrs;      
+  
+      
+
+      for (const key in revealedGroups) {
+        if (revealedGroups.hasOwnProperty(key)) {
+          parsed[key] = revealedGroups[key].raw;
+        }
+      }
+    
+      return parsed;
+    } catch (error) {
+    //   console.error('Error extracting proof values:', error);
+        // Handle the error as needed
+        return parsed;
+    }
+  
+  };
+
 //API to get proof request status
 router.get("/proof/status", async (req, res) => {
   const walletSecret = req.query.walletSecret as string;
@@ -189,7 +211,10 @@ router.get("/proof/status", async (req, res) => {
       decryptedToken,
       proofRecordId
     );
-    res.status(200).json(proofStatus);
+
+    const resp = extractProofValues(proofStatus.response);
+    
+    res.status(200).json(resp);
   } catch (error) {
     console.error("Error getting proof request status:", error);
     res.status(500).json({ error: "Failed to get proof request status" });

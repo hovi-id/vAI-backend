@@ -3,7 +3,6 @@ import { decryptString } from "./crypto";
 
 const router = Router();
 
-
 async function createWallet(label: string, secret: string) {
   const response = await fetch(
     `https://hackathon-cloud-wallet-api.koyeb.app/wallet/create`,
@@ -34,7 +33,7 @@ async function getAllConnections(token: string) {
     }
   );
 
-  const data = await response.json();  
+  const data = await response.json();
   return data;
 }
 
@@ -49,7 +48,7 @@ async function acceptConnection(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer " + token
+        Authorization: "Bearer " + token,
       },
       body: JSON.stringify({
         invitation: invitationUrl,
@@ -70,7 +69,7 @@ async function sendProofRequest(token: string, connectionId: string) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer " + token
+        Authorization: "Bearer " + token,
       },
       body: JSON.stringify({
         protocol: "didcomm",
@@ -96,17 +95,14 @@ async function sendProofRequest(token: string, connectionId: string) {
   return data;
 }
 
-async function getProofRequestStatus(
-  token: string,
-  proofRecordId: string
-) {
+async function getProofRequestStatus(token: string, proofRecordId: string) {
   const response = await fetch(
     `https://hackathon-cloud-wallet-api.koyeb.app/proof/${proofRecordId}`,
     {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer " + token
+        Authorization: "Bearer " + token,
       },
     }
   );
@@ -131,7 +127,7 @@ router.post("/create", async (req, res) => {
 router.get("/connections", async (req, res) => {
   try {
     const walletSecret = req.query.walletSecret as string;
-    const token = req.headers["authorization"]?.split(' ')[1] as string;    
+    const token = req.headers["authorization"]?.split(" ")[1] as string;
     const decryptedToken = await decryptString(token, walletSecret);
 
     const connections = await getAllConnections(decryptedToken);
@@ -146,12 +142,12 @@ router.get("/connections", async (req, res) => {
 
 router.post("/connections/accept", async (req, res) => {
   const { walletSecret, invitationUrl, label } = req.body;
-  try {    
-    const token = req.headers["authorization"]?.split(' ')[1] as string;    
+  try {
+    const token = req.headers["authorization"]?.split(" ")[1] as string;
     const decryptedToken = await decryptString(token, walletSecret);
 
     const connection = await acceptConnection(
-       decryptedToken,
+      decryptedToken,
       invitationUrl,
       label
     );
@@ -166,7 +162,7 @@ router.post("/connections/accept", async (req, res) => {
 router.post("/proof/send-request", async (req, res) => {
   const { walletSecret, connectionId } = req.body;
   try {
-    const token = req.headers["authorization"]?.split(' ')[1] as string;    
+    const token = req.headers["authorization"]?.split(" ")[1] as string;
     const decryptedToken = await decryptString(token, walletSecret);
     const proofRequest = await sendProofRequest(decryptedToken, connectionId);
     res.status(200).json(proofRequest);
@@ -177,21 +173,22 @@ router.post("/proof/send-request", async (req, res) => {
 });
 
 function parseAnonCreds(json: any) {
+  try {
     if (!json?.success || !json.response) return null;
-  
+
     const requestAttrs = json.response.request.anoncreds.requested_attributes;
-    const revealedAttrs = json.response.presentation.anoncreds.requested_proof.revealed_attrs;
+    const revealedAttrs =
+      json.response.presentation.anoncreds.requested_proof.revealed_attrs;
     const identifiers = json.response.presentation.anoncreds.identifiers?.[0];
 
-    const credDefId = identifiers.cred_def_id || '';
-    const schemaId = identifiers.schema_id || '';
+    const credDefId = identifiers.cred_def_id || "";
+    const schemaId = identifiers.schema_id || "";
 
-  // Extract issuer DID from cred_def_id
-  const issuerDid = credDefId.split('/resources/')[0] || '';
+    // Extract issuer DID from cred_def_id
+    const issuerDid = credDefId.split("/resources/")[0] || "";
 
-  
     const data: Record<string, string> = {};
-  
+
     for (const key in revealedAttrs) {
       const attrName = requestAttrs[key]?.name;
       const rawValue = revealedAttrs[key]?.raw;
@@ -199,30 +196,33 @@ function parseAnonCreds(json: any) {
         data[attrName] = rawValue;
       }
     }
-  
+
     return {
+      status: true,
       schemaId: schemaId,
       issuerDid: issuerDid,
       credDefId: credDefId,
       data,
     };
+  } catch (error) {
+    console.error("Error parsing anon creds:", error);
+    return { status: false };
   }
+}
 
 //API to get proof request status
 router.get("/proof/status", async (req, res) => {
   const walletSecret = req.query.walletSecret as string;
   const proofRecordId = req.query.proofRecordId as string;
   try {
-
-    const token = req.headers["authorization"]?.split(' ')[1] as string;    
+    const token = req.headers["authorization"]?.split(" ")[1] as string;
     const decryptedToken = await decryptString(token, walletSecret);
 
     const proofStatus = await getProofRequestStatus(
       decryptedToken,
       proofRecordId
-    );   
+    );
     const resp = parseAnonCreds(proofStatus);
-    
     res.status(200).json(resp);
   } catch (error) {
     console.error("Error getting proof request status:", error);
@@ -231,13 +231,18 @@ router.get("/proof/status", async (req, res) => {
 });
 
 router.get("/connectionInvite", async (req, res) => {
-    try {    
-      res.status(200).json({ inviteUrl: "https://studio-dev.hovi.id/connection?oob=eyJAdHlwZSI6Imh0dHBzOi8vZGlkY29tbS5vcmcvb3V0LW9mLWJhbmQvMS4xL2ludml0YXRpb24iLCJAaWQiOiJjYTBjOTE0Ni1lNjc5LTQzOWYtYjAwNS1iOGVhMzI5MjhhY2EiLCJsYWJlbCI6IisxNDE1OTgwODU5MCIsImFjY2VwdCI6WyJkaWRjb21tL2FpcDEiLCJkaWRjb21tL2FpcDI7ZW52PXJmYzE5Il0sImhhbmRzaGFrZV9wcm90b2NvbHMiOlsiaHR0cHM6Ly9kaWRjb21tLm9yZy9kaWRleGNoYW5nZS8xLjEiLCJodHRwczovL2RpZGNvbW0ub3JnL2Nvbm5lY3Rpb25zLzEuMCJdLCJzZXJ2aWNlcyI6W3siaWQiOiIjaW5saW5lLTAiLCJzZXJ2aWNlRW5kcG9pbnQiOiJodHRwczovL2tub3duLW1lbGl0YS1ob3ZpLTQ0NzI2MDc1LmtveWViLmFwcC9hZ2VudCIsInR5cGUiOiJkaWQtY29tbXVuaWNhdGlvbiIsInJlY2lwaWVudEtleXMiOlsiZGlkOmtleTp6Nk1rcWRLR3FFZlB4NEZNRmRTR21mMjZmclhUWVliMU05UmtYbnpoeDRXdjVIWUIiXSwicm91dGluZ0tleXMiOltdfV0sImltYWdlVXJsIjoiaHR0cHM6Ly9ob3ZpLWFzc2V0cy5zMy5ldS1jZW50cmFsLTEuYW1hem9uYXdzLmNvbS9zdHVkaW8tYXNzZXRzL3RlbmFudHMvaW1hZ2VzL2FjbWUtY2FsbGVyLWFnZW50LWltYWdlLTE3NDQ1NTU2OTk4MzUucG5nIn0" });
-    } catch (error) {
-      console.error("Error getting status:", error);
-      res.status(500).json({ error: "Failed to get status" });
-    }
-  });
+  try {
+    res
+      .status(200)
+      .json({
+        inviteUrl:
+          "https://studio-dev.hovi.id/connection?oob=eyJAdHlwZSI6Imh0dHBzOi8vZGlkY29tbS5vcmcvb3V0LW9mLWJhbmQvMS4xL2ludml0YXRpb24iLCJAaWQiOiJjYTBjOTE0Ni1lNjc5LTQzOWYtYjAwNS1iOGVhMzI5MjhhY2EiLCJsYWJlbCI6IisxNDE1OTgwODU5MCIsImFjY2VwdCI6WyJkaWRjb21tL2FpcDEiLCJkaWRjb21tL2FpcDI7ZW52PXJmYzE5Il0sImhhbmRzaGFrZV9wcm90b2NvbHMiOlsiaHR0cHM6Ly9kaWRjb21tLm9yZy9kaWRleGNoYW5nZS8xLjEiLCJodHRwczovL2RpZGNvbW0ub3JnL2Nvbm5lY3Rpb25zLzEuMCJdLCJzZXJ2aWNlcyI6W3siaWQiOiIjaW5saW5lLTAiLCJzZXJ2aWNlRW5kcG9pbnQiOiJodHRwczovL2tub3duLW1lbGl0YS1ob3ZpLTQ0NzI2MDc1LmtveWViLmFwcC9hZ2VudCIsInR5cGUiOiJkaWQtY29tbXVuaWNhdGlvbiIsInJlY2lwaWVudEtleXMiOlsiZGlkOmtleTp6Nk1rcWRLR3FFZlB4NEZNRmRTR21mMjZmclhUWVliMU05UmtYbnpoeDRXdjVIWUIiXSwicm91dGluZ0tleXMiOltdfV0sImltYWdlVXJsIjoiaHR0cHM6Ly9ob3ZpLWFzc2V0cy5zMy5ldS1jZW50cmFsLTEuYW1hem9uYXdzLmNvbS9zdHVkaW8tYXNzZXRzL3RlbmFudHMvaW1hZ2VzL2FjbWUtY2FsbGVyLWFnZW50LWltYWdlLTE3NDQ1NTU2OTk4MzUucG5nIn0",
+      });
+  } catch (error) {
+    console.error("Error getting status:", error);
+    res.status(500).json({ error: "Failed to get status" });
+  }
+});
 
 //API to get status of api
 router.get("/status", async (req, res) => {

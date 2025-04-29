@@ -176,28 +176,27 @@ router.post("/proof/send-request", async (req, res) => {
   }
 });
 
-const extractProofValues = (jsonData: any) => {
-    const extracted: Record<string, string> = {};
+// const extractProofValues = (jsonData: any) => {
+//     const extracted: Record<string, string> = {};
   
-    try {
-      const revealedGroups = jsonData.presentation.anoncreds.requested_proof.revealed_attrs;      
+//     try {
+//       const revealedGroups = jsonData.presentationExchange.presentation.anoncreds.requested_proof.revealed_attr_groups;
   
-      if (revealedGroups?.attributes?.values) {
-        const values = revealedGroups.attributes.values;
+//       if (revealedGroups?.attributes?.values) {
+//         const values = revealedGroups.attributes.values;
   
-        for (const key in values) {
-          if (values[key]?.raw) {
-            extracted[key] = values[key].raw;
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error extracting proof values:', error);
-    }
+//         for (const key in values) {
+//           if (values[key]?.raw) {
+//             extracted[key] = values[key].raw;
+//           }
+//         }
+//       }
+//     } catch (error) {
+//       console.error('Error extracting proof values:', error);
+//     }
   
-    return extracted;
-  };
-
+//     return extracted;
+//   };
 //API to get proof request status
 router.get("/proof/status", async (req, res) => {
   const walletSecret = req.query.walletSecret as string;
@@ -211,9 +210,6 @@ router.get("/proof/status", async (req, res) => {
       decryptedToken,
       proofRecordId
     );
-
-    const resp = extractProofValues(proofStatus.response);
-    console.log("Extracted proof values:", resp);
     res.status(200).json(proofStatus);
   } catch (error) {
     console.error("Error getting proof request status:", error);

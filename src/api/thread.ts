@@ -40,14 +40,15 @@ async function submitPresentation(proofRecordId: string) {
   });
 
   const json = await response.json();
-  console.log(`✅ Submitted presentation for ${proofRecordId}`, json);
+//   console.log(`✅ Submitted presentation for ${proofRecordId}`);
   return json;
 }
 
 async function initAiAgentProofSubmissionPoll() {
+      console.log("🔍 Checking and submitting for pending proof requests every 5 seconds...");
   while (true) {
     try {
-      console.log("🔍 Checking for pending proof requests...");
+    
       const requests = await fetchProofRequests();
 
       const pending = requests.filter(
@@ -58,16 +59,18 @@ async function initAiAgentProofSubmissionPoll() {
         console.log(`🟡 Found ${pending.length} pending request(s)`);
       }
 
+      //TODO: fetch phonenumber of user based on connectionId and check in redis for active call
+
       for (const req of pending) {
         console.log(`🚀 Submitting presentation for proofRecordId: ${req.proofExchangeId}`);
         await submitPresentation(req.proofExchangeId);
       }
-
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      console.log('\n');
+      await new Promise((resolve) => setTimeout(resolve, 5000));
     } catch (error) {
       console.error("❌ Error in polling loop:", error);
-      console.log("⏳ Restarting loop in 2 seconds...");
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      console.log("⏳ Restarting loop in 5 seconds...");
+      await new Promise((resolve) => setTimeout(resolve, 5000));
     }
   }
 }

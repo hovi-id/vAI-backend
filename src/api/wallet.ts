@@ -176,27 +176,38 @@ router.post("/proof/send-request", async (req, res) => {
   }
 });
 
-// const extractProofValues = (jsonData: any) => {
-//     const extracted: Record<string, string> = {};
+function parseAnonCreds(json: any) {
+    if (!json?.success || !json.response) return null;
   
-//     try {
-//       const revealedGroups = jsonData.presentationExchange.presentation.anoncreds.requested_proof.revealed_attr_groups;
+    const requestAttrs = json.response.request.anoncreds.requested_attributes;
+    const revealedAttrs = json.response.presentation.anoncreds.requested_proof.revealed_attrs;
+    const identifiers = json.response.presentation.anoncreds.identifiers?.[0];
+
+    const credDefId = identifiers.cred_def_id || '';
+    const schemaId = identifiers.schema_id || '';
+
+  // Extract issuer DID from cred_def_id
+  const issuerDid = credDefId.split('/resources/')[0] || '';
+
   
-//       if (revealedGroups?.attributes?.values) {
-//         const values = revealedGroups.attributes.values;
+    const data: Record<string, string> = {};
   
-//         for (const key in values) {
-//           if (values[key]?.raw) {
-//             extracted[key] = values[key].raw;
-//           }
-//         }
-//       }
-//     } catch (error) {
-//       console.error('Error extracting proof values:', error);
-//     }
+    for (const key in revealedAttrs) {
+      const attrName = requestAttrs[key]?.name;
+      const rawValue = revealedAttrs[key]?.raw;
+      if (attrName && rawValue) {
+        data[attrName] = rawValue;
+      }
+    }
   
-//     return extracted;
-//   };
+    return {
+      schemaId: schemaId,
+      issuerDid: issuerDid,
+      credDefId: credDefId,
+      data,
+    };
+  }
+
 //API to get proof request status
 router.get("/proof/status", async (req, res) => {
   const walletSecret = req.query.walletSecret as string;
@@ -209,8 +220,10 @@ router.get("/proof/status", async (req, res) => {
     const proofStatus = await getProofRequestStatus(
       decryptedToken,
       proofRecordId
-    );
-    res.status(200).json(proofStatus);
+    );   
+    const resp = parseAnonCreds(proofStatus);
+    
+    res.status(200).json(resp);
   } catch (error) {
     console.error("Error getting proof request status:", error);
     res.status(500).json({ error: "Failed to get proof request status" });

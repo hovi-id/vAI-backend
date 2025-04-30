@@ -47,5 +47,5 @@ app.use('/wallet', require('./api/wallet').default);
 
 app.listen(PORT, async function () {
   console.log('Server listening on port ' + PORT);  
-  // initAiAgentProofSubmissionPoll();  
+  initAiAgentProofSubmissionPoll();  
 });

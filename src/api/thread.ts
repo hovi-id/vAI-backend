@@ -9,7 +9,7 @@ async function fetchProofRequests() {
     if (!TENANT_ID) {
         throw new Error("Tenant ID is not set");
     }
-  const response = await fetch(`${API_BASE}/verification/proof-request`, {
+  const response = await fetch(`${API_BASE}/verification/proof-request?state=pending`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",

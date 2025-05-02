@@ -437,7 +437,7 @@ router.get("/get-vai-status/:phone_number", async (req, res) => {
 
 router.get("/status", async (req, res) => {
   try {
-    console.log("Status route here!");
+    console.log("Status route here");
     res.status(200).json({ status: true });
   } catch (error) {
     console.error("Error getting status:", error);

@@ -166,7 +166,7 @@ const extractProofValues = (jsonData: any) => {
       }
     }
   } catch (error) {
-    console.error('Error extracting proof values:', error);
+    // console.error('Error extracting proof values:', error);    
   }
 
   return extracted;

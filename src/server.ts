@@ -2,7 +2,6 @@ require('dotenv').config();
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import { initAiAgentProofSubmissionPoll } from './api/thread'; 
 // import router from './routes/index';
 // import { initAPI } from './routes/index';
 import { authenticateToken } from './middlewares/auth';
@@ -47,5 +46,4 @@ app.use('/wallet', require('./api/wallet').default);
 
 app.listen(PORT, async function () {
   console.log('Server listening on port ' + PORT);  
-  // initAiAgentProofSubmissionPoll();  
 });

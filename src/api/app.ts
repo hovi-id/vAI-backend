@@ -149,70 +149,6 @@ async function makePhoneCall(phone_number: string, connection_id: string): Promi
   }
 }
 
-// Function to send to the proof request
-
-
-const respondAiAgentProofRequest = async () => {
-    const apiUrl =  process.env.API_ENDPOINT +'/verification/proof-request';
-    const interval = 2000;
-    const timeout = 5 * 60 * 1000;
-    const startTime = Date.now();
-
-    const apiKey = process.env.HOVI_API_KEY;
-    const agentTenantId = process.env.AGENT_TENANT_ID;
-    const headers = {
-        "x-tenant-id": agentTenantId,
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      };
-
-    if (!apiKey || !agentTenantId || !headers) {
-      throw new Error("Missing API key or agent tenant ID in environment variables");
-    }
-  
-    const check = async () => {
-      try {        
-        const response = await axios.get(apiUrl, { headers });        
-        const data = await response.data;
-        if (Array.isArray(data.response) && data.response.length > 0) {
-          console.log(`🎉 Response for tenant ${agentTenantId}:`, data.response);
-          // TODO: Find from which connection the proof request was sent from and if the phone number session is active for it
-          // const connectionId = data.response[0].connectionId;          
-          // const connectionDetails = await getConnectionDetails(connectionId);          
-          // const phone_number = connectionDetails.theirLabel;
-          // const callStatus = RedisCache.getValue(`phone_call_${phone_number}`);
-
-          const URL2 = process.env.API_ENDPOINT + '/verification/submit-presentation';
-          const payload = { proofRecordId: "PROOF-RECORD-FOUND in data.response" }
-          const response2 = await axios.post(URL2, payload, { headers });;      
-          const data2 = await response2.data  
-          console.log(`🎉 DATA of proof submission:`, data2);
-
-          return true; // Stop polling if the proof request is found
-        }
-          
-        console.log(`⏳ Waiting for tenant ${agentTenantId}...`);
-        return false;
-  
-      } catch (err) {
-        console.error(`❌ Error for tenant ${agentTenantId}:`, err);
-        return true;     // Stop polling on error
-      }
-    };
-  
-    const poll = async () => {
-      while (Date.now() - startTime < timeout) {
-        const found = await check();
-        if (found) break;
-        await new Promise(res => setTimeout(res, interval));
-      }
-  
-      console.log(`✅ Polling done for tenant ${agentTenantId}`);
-    };
-  
-    poll();
-  };
-
 
 const extractProofValues = (jsonData: any) => {
   const extracted: Record<string, string> = {};
@@ -246,8 +182,7 @@ const sendAndCheckProofDuringCall = async (phone_number: string) => {
       console.error("No call data found in Redis");
       return null;
     }     
-   
-    //TODO: CHECK IF PHONE CALL IS ACTIVE
+    
     console.log("Call data:", call_data);
     const connectionId = call_data.connection_id;
 
@@ -317,6 +252,100 @@ const sendAndCheckProofDuringCall = async (phone_number: string) => {
     }
   };
 
+
+
+  async function fetchvAiProofRequests() {
+    const TOKEN = process.env.HOVI_API_KEY;
+    const TENANT_ID = process.env.AGENT_TENANT_ID;
+    if (!TOKEN) {
+        throw new Error("API key is not set");
+    }
+    if (!TENANT_ID) {
+        throw new Error("Tenant ID is not set");
+    }
+  const response = await fetch(`${process.env.API_ENDPOINT}/verification/proof-request?state=pending`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "x-tenant-id": TENANT_ID,
+      Authorization: `Bearer ${TOKEN}`,
+    },
+  });
+
+  const json = await response.json();
+  return json.response;
+}
+
+async function submitvAiPresentation(proofExchangeId: string) {
+  const TOKEN = process.env.HOVI_API_KEY;
+  const TENANT_ID = process.env.AGENT_TENANT_ID;
+    if (!TOKEN) {
+        throw new Error("API key is not set");
+    }
+    if (!TENANT_ID) {
+        throw new Error("Tenant ID is not set");
+    }
+  const response = await fetch(`${process.env.API_ENDPOINT}/verification/submit-presentation`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-tenant-id": TENANT_ID,
+      Authorization: `Bearer ${TOKEN}`,
+    },
+    body: JSON.stringify({ "proofRecordId": proofExchangeId }),
+  });
+
+  const json = await response.json();
+//   console.log(`✅ Submitted presentation for ${proofRecordId}`);
+  return json;
+}
+
+async function rejectvAiProofRequest(proofExchangeId: string) {
+  const TOKEN = process.env.HOVI_API_KEY;
+  const TENANT_ID = process.env.AGENT_TENANT_ID;
+    if (!TOKEN) {
+        throw new Error("API key is not set");
+    }
+    if (!TENANT_ID) {
+        throw new Error("Tenant ID is not set");
+    }
+  const response = await fetch(`${process.env.API_ENDPOINT}/verification/decline-request`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-tenant-id": TENANT_ID,
+      Authorization: `Bearer ${TOKEN}`,
+    },
+    body: JSON.stringify({ "proofExchangeId:": proofExchangeId })
+  });
+  const json = await response.json();
+  return json
+}
+
+
+async function processvAiProofRequests(phoneNumber: string) {
+  const proofRequests = await fetchvAiProofRequests();
+  let vAI_STATUS = "pending";
+  for (const proofRequest of proofRequests) {
+    const proofExchangeId = proofRequest.proofExchangeId;
+    console.log(`Processing proof exchange ID: ${proofExchangeId}`);
+
+    const call_data = await RedisCache.getValue(
+      `phone_call_${phoneNumber}`);
+
+    if (!call_data) {
+      console.log("No active call data found, rejecting proof request");
+      const result = await rejectvAiProofRequest(proofExchangeId);
+      vAI_STATUS = "rejected";
+    }     else {
+      const result = await submitvAiPresentation(proofExchangeId);      
+      console.log(`Result for ${proofExchangeId}:`, result);
+      return "verified";
+    }
+  }
+  return vAI_STATUS;
+}
+
 // API endpoint to create a connection
 router.post("/create-connection", async (req, res) => {
   try {
@@ -365,16 +394,6 @@ router.post("/make-phone-call", async (req, res) => {
     }
 });
 
-//API endpoint to respond to the proof request
-// router.post("/respond-proof-request", async (req, res) => {    
-//     try {
-//         const response = await respondAiAgentProofRequest();
-//         res.status(200).json(response);
-//     } catch (error: any) {
-//         res.status(500).json({ error: error.message });
-//     }
-// });
-
 //API endpoint to send and check proof during call
 router.post("/send-proofreq-during-call", async (req, res) => {
   console.log("body", req.body);
@@ -402,6 +421,18 @@ router.get("/get-credential-info/:phone_number", async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+//API route to process vAI proof requests
+router.get("/get-vai-status/:phone_number", async (req, res) => {   
+  const phoneNumber = req.params.phone_number; 
+    try {
+        const status = await processvAiProofRequests(phoneNumber);
+        res.status(200).json({ "status": status });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+}
+);
 
 
 router.get("/status", async (req, res) => {

@@ -9,6 +9,7 @@ https://dorahacks.io/hackathon/cheqd-verifiable-ai/
 - Issuance/Verification of Anoncreds credentials with cheqd 
 - Verification of DID-linked resources using cheqd studio APIs
 - Cloud wallet creation and mangement
+- Make phone calls with AI Agent
 
 
 ## Technologies used

@@ -2,9 +2,7 @@ require('dotenv').config();
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-// import router from './routes/index';
-// import { initAPI } from './routes/index';
-import { authenticateToken } from './middlewares/auth';
+// import { authenticateToken } from './middlewares/auth';
 
 
 const app = express();

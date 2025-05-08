@@ -2,10 +2,11 @@ import { Router } from "express";
 import { decryptString } from "./crypto";
 
 const router = Router();
+;
 
 async function createWallet(label: string, secret: string) {
   const response = await fetch(
-    `https://hackathon-cloud-wallet-api.koyeb.app/wallet/create`,
+    `${process.env.CLOUD_WALLET_API_ENDPOINT}/wallet/create`,
     {
       method: "POST",
       headers: {
@@ -24,7 +25,7 @@ async function createWallet(label: string, secret: string) {
 
 async function getAllConnections(token: string) {
   const response = await fetch(
-    `https://hackathon-cloud-wallet-api.koyeb.app/connection`,
+    `${process.env.CLOUD_WALLET_API_ENDPOINT}/connection`,
     {
       method: "GET",
       headers: {
@@ -43,7 +44,7 @@ async function acceptConnection(
   label: string
 ) {
   const response = await fetch(
-    `https://hackathon-cloud-wallet-api.koyeb.app/connection/accept-invitation`,
+    `${process.env.CLOUD_WALLET_API_ENDPOINT}/connection/accept-invitation`,
     {
       method: "POST",
       headers: {
@@ -64,7 +65,7 @@ async function acceptConnection(
 
 async function sendProofRequest(token: string, connectionId: string) {
   const response = await fetch(
-    `https://hackathon-cloud-wallet-api.koyeb.app/proof/send-request`,
+    `${process.env.CLOUD_WALLET_API_ENDPOINT}/proof/send-request`,
     {
       method: "POST",
       headers: {
@@ -97,7 +98,7 @@ async function sendProofRequest(token: string, connectionId: string) {
 
 async function getProofRequestStatus(token: string, proofRecordId: string) {
   const response = await fetch(
-    `https://hackathon-cloud-wallet-api.koyeb.app/proof/${proofRecordId}`,
+    `${process.env.CLOUD_WALLET_API_ENDPOINT}/proof/${proofRecordId}`,
     {
       method: "GET",
       headers: {

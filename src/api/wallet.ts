@@ -215,6 +215,7 @@ async function verifyDIDLinkedResources(issuerDid: string, credDefId: string) {
   const API_KEY = process.env.CHEQD_API_KEY;
   const url = `https://studio-api.cheqd.net/resource/search/${issuerDid}`;
 
+  // Extract the resource ID from the credDefId
   const credDefResourceId = credDefId.split("/").pop();
 
   const params = {
@@ -252,14 +253,19 @@ router.get("/proof/status", async (req, res) => {
     }
     const issuerDid = resp.issuerDid;
     const credDefId = resp.credDefId;    
-    let linkedResResp = await verifyDIDLinkedResources(issuerDid, credDefId);
-    if (linkedResResp.status !== 200) {
-      res.status(400).json({ error: "Failed to verify linked resources" });
-      return;
-    }
-    const linkedResData = linkedResResp.data;
-    console.log("Linked Resources Data:", linkedResData);
-    
+
+    if (issuerDid && credDefId) {
+        let didLinkedResp = await verifyDIDLinkedResources(issuerDid, credDefId);        
+        if (didLinkedResp.status === 200) {
+            console.log(didLinkedResp.data);
+            console.log(resp)
+            res.status(200).json(resp);
+        } else {
+            console.error("Error verifying DID-linked resources:", didLinkedResp);
+            res.status(500).json({ error: "Failed to verify DID-linked resources" });
+            return;
+        }
+    } 
     res.status(200).json(resp);
   } catch (error) {
     console.error("Error getting proof request status:", error);

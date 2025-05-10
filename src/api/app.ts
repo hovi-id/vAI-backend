@@ -340,7 +340,7 @@ async function processvAiProofRequests(phoneNumber: string) {
     }     else {
       const result = await submitvAiPresentation(proofExchangeId);      
       console.log(`Result for ${proofExchangeId}:`, result);
-      return "verified";
+      vAI_STATUS = "verified";
     }
   }
   return vAI_STATUS;

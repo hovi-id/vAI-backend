@@ -221,20 +221,13 @@ async function verifyDIDLinkedResources(issuerDid: string, credDefId: string) {
     resourceId: credDefResourceId,
   };
 
-  axios
+  return await axios
     .get(url, {
       headers: {
         accept: "json/",
         "x-api-key": API_KEY,
       },
       params,
-    })
-    .then((response) => {
-      console.log("Status:", response.status);
-      console.log("Data:", response.data);
-    })
-    .catch((err) => {
-      console.error("Request failed:", err.response?.status, err.message);
     });
 }
 
@@ -259,7 +252,14 @@ router.get("/proof/status", async (req, res) => {
     }
     const issuerDid = resp.issuerDid;
     const credDefId = resp.credDefId;    
-    await verifyDIDLinkedResources(issuerDid, credDefId);
+    let linkedResResp = await verifyDIDLinkedResources(issuerDid, credDefId);
+    if (linkedResResp.status !== 200) {
+      res.status(400).json({ error: "Failed to verify linked resources" });
+      return;
+    }
+    const linkedResData = linkedResResp.data;
+    console.log("Linked Resources Data:", linkedResData);
+    
     res.status(200).json(resp);
   } catch (error) {
     console.error("Error getting proof request status:", error);

@@ -2,7 +2,7 @@
 
 This project serves as a demonstration for a Verifiable AI Call Agent. In this demo, an AI sales agent initiates a call to the user. The mobile app verifies the AI agent's identity by leveraging verifiable credentials and DID-linked resources, ensuring that the user is interacting with a trusted and authenticated AI agent. This process establishes trust and authenticity in the interaction.
 
-Additionally, the AI agent interacts with users over the call and verifies their identity in real-time by interacting with their digital wallet. This runtime verification uses verifiable credentials, further enhancing the security and reliability of the interaction.
+Additionally, the verified AI agent uses organziation wallet to interacts with users over the call and verifies their identity in real-time by interacting with their digital wallet. This runtime verification uses verifiable credentials, further enhancing the security and reliability of the interaction.
 
 This project showcases the potential of combining decentralized identity (DID) and verifiable credentials with AI to create secure, trustworthy, and innovative communication solutions.
 

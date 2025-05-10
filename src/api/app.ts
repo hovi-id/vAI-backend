@@ -231,7 +231,7 @@ const sendAndCheckProofDuringCall = async (phone_number: string) => {
           ); // Store the phone call status in Redis for 5 mins
 
           console.log('🎉 Proof response received:', credData);
-          return proof;
+          return credData;
         }
 
         if (proof && proof.state === "abandonded") {

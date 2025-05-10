@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { decryptString } from "./crypto";
+import axios from "axios";
 
 const router = Router();
-;
 
 async function createWallet(label: string, secret: string) {
   const response = await fetch(
@@ -211,6 +211,33 @@ function parseAnonCreds(json: any) {
   }
 }
 
+async function verifyDIDLinkedResources(issuerDid: string, credDefId: string) {
+  const API_KEY = process.env.CHEQD_API_KEY;
+  const url = `https://studio-api.cheqd.net/resource/search/${issuerDid}`;
+
+  const credDefResourceId = credDefId.split("/").pop();
+
+  const params = {
+    resourceId: credDefResourceId,
+  };
+
+  axios
+    .get(url, {
+      headers: {
+        accept: "json/",
+        "x-api-key": API_KEY,
+      },
+      params,
+    })
+    .then((response) => {
+      console.log("Status:", response.status);
+      console.log("Data:", response.data);
+    })
+    .catch((err) => {
+      console.error("Request failed:", err.response?.status, err.message);
+    });
+}
+
 //API to get proof request status
 router.get("/proof/status", async (req, res) => {
   const walletSecret = req.query.walletSecret as string;
@@ -224,6 +251,15 @@ router.get("/proof/status", async (req, res) => {
       proofRecordId
     );
     const resp = parseAnonCreds(proofStatus);
+
+    //Verifying DID-Linked Resources
+    if (!resp) {
+        res.status(400).json({ error: "Invalid proof status response" });
+        return
+    }
+    const issuerDid = resp.issuerDid;
+    const credDefId = resp.credDefId;    
+    await verifyDIDLinkedResources(issuerDid, credDefId);
     res.status(200).json(resp);
   } catch (error) {
     console.error("Error getting proof request status:", error);
@@ -233,12 +269,10 @@ router.get("/proof/status", async (req, res) => {
 
 router.get("/connectionInvite", async (req, res) => {
   try {
-    res
-      .status(200)
-      .json({
-        inviteUrl:
-          "https://studio-dev.hovi.id/connection?oob=eyJAdHlwZSI6Imh0dHBzOi8vZGlkY29tbS5vcmcvb3V0LW9mLWJhbmQvMS4xL2ludml0YXRpb24iLCJAaWQiOiJjYTBjOTE0Ni1lNjc5LTQzOWYtYjAwNS1iOGVhMzI5MjhhY2EiLCJsYWJlbCI6IisxNDE1OTgwODU5MCIsImFjY2VwdCI6WyJkaWRjb21tL2FpcDEiLCJkaWRjb21tL2FpcDI7ZW52PXJmYzE5Il0sImhhbmRzaGFrZV9wcm90b2NvbHMiOlsiaHR0cHM6Ly9kaWRjb21tLm9yZy9kaWRleGNoYW5nZS8xLjEiLCJodHRwczovL2RpZGNvbW0ub3JnL2Nvbm5lY3Rpb25zLzEuMCJdLCJzZXJ2aWNlcyI6W3siaWQiOiIjaW5saW5lLTAiLCJzZXJ2aWNlRW5kcG9pbnQiOiJodHRwczovL2tub3duLW1lbGl0YS1ob3ZpLTQ0NzI2MDc1LmtveWViLmFwcC9hZ2VudCIsInR5cGUiOiJkaWQtY29tbXVuaWNhdGlvbiIsInJlY2lwaWVudEtleXMiOlsiZGlkOmtleTp6Nk1rcWRLR3FFZlB4NEZNRmRTR21mMjZmclhUWVliMU05UmtYbnpoeDRXdjVIWUIiXSwicm91dGluZ0tleXMiOltdfV0sImltYWdlVXJsIjoiaHR0cHM6Ly9ob3ZpLWFzc2V0cy5zMy5ldS1jZW50cmFsLTEuYW1hem9uYXdzLmNvbS9zdHVkaW8tYXNzZXRzL3RlbmFudHMvaW1hZ2VzL2FjbWUtY2FsbGVyLWFnZW50LWltYWdlLTE3NDQ1NTU2OTk4MzUucG5nIn0",
-      });
+    res.status(200).json({
+      inviteUrl:
+        "https://studio-dev.hovi.id/connection?oob=eyJAdHlwZSI6Imh0dHBzOi8vZGlkY29tbS5vcmcvb3V0LW9mLWJhbmQvMS4xL2ludml0YXRpb24iLCJAaWQiOiJjYTBjOTE0Ni1lNjc5LTQzOWYtYjAwNS1iOGVhMzI5MjhhY2EiLCJsYWJlbCI6IisxNDE1OTgwODU5MCIsImFjY2VwdCI6WyJkaWRjb21tL2FpcDEiLCJkaWRjb21tL2FpcDI7ZW52PXJmYzE5Il0sImhhbmRzaGFrZV9wcm90b2NvbHMiOlsiaHR0cHM6Ly9kaWRjb21tLm9yZy9kaWRleGNoYW5nZS8xLjEiLCJodHRwczovL2RpZGNvbW0ub3JnL2Nvbm5lY3Rpb25zLzEuMCJdLCJzZXJ2aWNlcyI6W3siaWQiOiIjaW5saW5lLTAiLCJzZXJ2aWNlRW5kcG9pbnQiOiJodHRwczovL2tub3duLW1lbGl0YS1ob3ZpLTQ0NzI2MDc1LmtveWViLmFwcC9hZ2VudCIsInR5cGUiOiJkaWQtY29tbXVuaWNhdGlvbiIsInJlY2lwaWVudEtleXMiOlsiZGlkOmtleTp6Nk1rcWRLR3FFZlB4NEZNRmRTR21mMjZmclhUWVliMU05UmtYbnpoeDRXdjVIWUIiXSwicm91dGluZ0tleXMiOltdfV0sImltYWdlVXJsIjoiaHR0cHM6Ly9ob3ZpLWFzc2V0cy5zMy5ldS1jZW50cmFsLTEuYW1hem9uYXdzLmNvbS9zdHVkaW8tYXNzZXRzL3RlbmFudHMvaW1hZ2VzL2FjbWUtY2FsbGVyLWFnZW50LWltYWdlLTE3NDQ1NTU2OTk4MzUucG5nIn0",
+    });
   } catch (error) {
     console.error("Error getting status:", error);
     res.status(500).json({ error: "Failed to get status" });

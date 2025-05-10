@@ -327,7 +327,7 @@ async function processvAiProofRequests(phoneNumber: string) {
   const proofRequests = await fetchvAiProofRequests();
   let vAI_STATUS = "pending";
   for (const proofRequest of proofRequests) {
-    const proofExchangeId = proofRequest.proofExchangeId;
+    const proofExchangeId = proofRequest.proofExchangeId;    
     console.log(`Processing proof exchange ID: ${proofExchangeId}`);
 
     const call_data = await RedisCache.getValue(
@@ -336,11 +336,11 @@ async function processvAiProofRequests(phoneNumber: string) {
     if (!call_data) {
       console.log("No active call data found, rejecting proof request");
       const result = await rejectvAiProofRequest(proofExchangeId);
-      vAI_STATUS = "rejected";
+      vAI_STATUS = "rejected";      
     }     else {
       const result = await submitvAiPresentation(proofExchangeId);      
       console.log(`Result for ${proofExchangeId}:`, result);
-      return "verified";
+      vAI_STATUS = "verified";
     }
   }
   return vAI_STATUS;

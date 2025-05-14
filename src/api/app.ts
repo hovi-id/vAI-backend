@@ -261,6 +261,7 @@ const sendAndCheckProofDuringCall = async (phone_number: string) => {
                 console.error("Error verifying DID-linked resources:", didLinkedResp);
                 return null;
             }
+          }
 
 
           RedisCache.setValue(

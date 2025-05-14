@@ -154,7 +154,7 @@ const extractProofValues = (jsonData: any) => {
   const extracted: Record<string, string> = {};
 
   try {
-    const revealedGroups = jsonData.presentationExchange.presentation.anoncreds.requested_proof.revealed_attr_groups;
+    const revealedGroups = jsonData.presentationExchange.presentation.anoncreds.requested_proof.revealed_attr_groups;    
 
     if (revealedGroups?.attributes?.values) {
       const values = revealedGroups.attributes.values;
@@ -172,6 +172,27 @@ const extractProofValues = (jsonData: any) => {
   return extracted;
 };
   
+
+async function verifyDIDLinkedResources(issuerDid: string, credDefId: string) {
+  const API_KEY = process.env.CHEQD_API_KEY;
+  const url = `https://studio-api.cheqd.net/resource/search/${issuerDid}`;
+
+  // Extract the resource ID from the credDefId
+  const credDefResourceId = credDefId.split("/").pop();
+
+  const params = {
+    resourceId: credDefResourceId,
+  };
+
+  return await axios
+    .get(url, {
+      headers: {
+        accept: "json/",
+        "x-api-key": API_KEY,
+      },
+      params,
+    });
+}
 
 const sendAndCheckProofDuringCall = async (phone_number: string) => {
     const verificationTemplateId = process.env.VERIFICATION_TEMPLATE_ID;
@@ -220,6 +241,27 @@ const sendAndCheckProofDuringCall = async (phone_number: string) => {
         const proof = pollRes.data.response;
         if (proof && proof.isVerified && proof.state === "done") {
           let credData = extractProofValues(proof);
+
+          
+          const identifiers = proof.presentationExchange.presentation.anoncreds.identifiers?.[0];
+          console.log("Identifiers:", identifiers);
+
+          const credDefId = identifiers.cred_def_id || "";
+          const issuerDid = process.env.ISSUER_DID;
+
+          console.log("v2",credDefId);
+          console.log("v3",issuerDid);
+      
+            // verifying did-linked resource
+        if (issuerDid && credDefId) {
+            let didLinkedResp = await verifyDIDLinkedResources(issuerDid, credDefId);        
+            if (didLinkedResp.status === 200) {
+                console.log("dis-linked data", didLinkedResp.data);
+            } else {
+                console.error("Error verifying DID-linked resources:", didLinkedResp);
+                return null;
+            }
+
 
           RedisCache.setValue(
             `phone_call_${phone_number}`,

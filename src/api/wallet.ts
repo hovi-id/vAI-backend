@@ -251,7 +251,7 @@ router.get("/proof/status", async (req, res) => {
         res.status(400).json({ error: "Invalid proof status response" });
         return
     }
-    const issuerDid = resp.issuerDid;
+    const issuerDid = process.env.ISSUER_DID;
     const credDefId = resp.credDefId;    
 
     if (issuerDid && credDefId) {

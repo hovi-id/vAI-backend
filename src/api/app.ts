@@ -126,8 +126,7 @@ async function makePhoneCall(phone_number: string, connection_id: string): Promi
       .then((response) => {
         if (response.status !== 200) {
           throw new Error("Error making phone call");
-        }
-        console.log("Response:", response);
+        }        
 
         RedisCache.setValue(
           `phone_call_${phone_number}`,
@@ -203,8 +202,7 @@ const sendAndCheckProofDuringCall = async (phone_number: string) => {
       console.error("No call data found in Redis");
       return null;
     }     
-    
-    console.log("Call data:", call_data);
+        
     const connectionId = call_data.connection_id;
 
     const token = process.env.HOVI_API_KEY;
@@ -243,20 +241,16 @@ const sendAndCheckProofDuringCall = async (phone_number: string) => {
           let credData = extractProofValues(proof);
 
           
-          const identifiers = proof.presentationExchange.presentation.anoncreds.identifiers?.[0];
-          console.log("Identifiers:", identifiers);
+          const identifiers = proof.presentationExchange.presentation.anoncreds.identifiers?.[0];          
 
           const credDefId = identifiers.cred_def_id || "";
           const issuerDid = process.env.ISSUER_DID;
-
-          console.log("v2",credDefId);
-          console.log("v3",issuerDid);
       
             // verifying did-linked resource
         if (issuerDid && credDefId) {
             let didLinkedResp = await verifyDIDLinkedResources(issuerDid, credDefId);        
             if (didLinkedResp.status === 200) {
-                console.log("dis-linked data", didLinkedResp.data);
+                console.log("did-linked data found", didLinkedResp.data);
             } else {
                 console.error("Error verifying DID-linked resources:", didLinkedResp);
                 return null;
@@ -438,8 +432,7 @@ router.post("/make-phone-call", async (req, res) => {
 });
 
 //API endpoint to send and check proof during call
-router.post("/send-proofreq-during-call", async (req, res) => {
-  console.log("body", req.body);
+router.post("/send-proofreq-during-call", async (req, res) => {  
     const phoneNumber = req.body.to;
     try {
         const response = await sendAndCheckProofDuringCall(phoneNumber);

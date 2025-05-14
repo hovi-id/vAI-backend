@@ -256,9 +256,7 @@ router.get("/proof/status", async (req, res) => {
 
     if (issuerDid && credDefId) {
         let didLinkedResp = await verifyDIDLinkedResources(issuerDid, credDefId);        
-        if (didLinkedResp.status === 200) {
-            console.log(didLinkedResp.data);
-            console.log(resp)
+        if (didLinkedResp.status === 200) {            
             res.status(200).json(resp);
         } else {
             console.error("Error verifying DID-linked resources:", didLinkedResp);
